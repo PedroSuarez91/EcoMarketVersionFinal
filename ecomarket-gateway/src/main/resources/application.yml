@@ -1,0 +1,85 @@
+spring:
+  application:
+    name: ecomarket-gateway
+
+  cloud:
+    gateway:
+      server:
+        webflux:
+          routes:
+
+            # ---------- Usuarios y acceso ----------
+            - id: ms-usuario
+              uri: http://localhost:8081
+              predicates:
+                - Path=/api/v1/usuarios,/api/v1/usuarios/**
+
+            - id: ms-autentificacion
+              uri: http://localhost:9092
+              predicates:
+                - Path=/api/v1/autentificacion,/api/v1/autentificacion/**
+
+            - id: ms-soporte
+              uri: http://localhost:9091
+              predicates:
+                - Path=/api/v1/soporte,/api/v1/soporte/**
+
+            # ---------- Catalogo y stock ----------
+            - id: ms-catalogo
+              uri: http://localhost:8090
+              predicates:
+                - Path=/api/v1/productos,/api/v1/productos/**,/api/v1/categorias,/api/v1/categorias/**,/api/v1/catalogos,/api/v1/catalogos/**,/api/v1/resenias,/api/v1/resenias/**
+
+            - id: ms-inventario
+              uri: http://localhost:9093
+              predicates:
+                - Path=/api/v1/inventario,/api/v1/inventario/**
+
+            - id: ms-bodega
+              uri: http://localhost:9094
+              predicates:
+                - Path=/api/v1/bodega,/api/v1/bodega/**
+
+            - id: ms-sucursal
+              uri: http://localhost:8084
+              predicates:
+                - Path=/api/v1/sucursales,/api/v1/sucursales/**
+
+            - id: ms-proveedor
+              uri: http://localhost:8082
+              predicates:
+                - Path=/api/v1/proveedores,/api/v1/proveedores/**
+
+            - id: ms-reabastecimiento
+              uri: http://localhost:8085
+              predicates:
+                - Path=/api/v1/reabastecimientos,/api/v1/reabastecimientos/**
+
+            # ---------- Flujo de compra ----------
+            - id: ms-cupon
+              uri: http://localhost:8091
+              predicates:
+                - Path=/api/v1/cupones,/api/v1/cupones/**
+
+            - id: ms-carro
+              uri: http://localhost:8083
+              predicates:
+                - Path=/api/v1/carros,/api/v1/carros/**
+
+            - id: ms-pedido
+              uri: http://localhost:8093
+              predicates:
+                - Path=/api/v1/pedidos,/api/v1/pedidos/**,/api/v1/direcciones,/api/v1/direcciones/**
+
+            - id: ms-factura
+              uri: http://localhost:8087
+              predicates:
+                - Path=/api/v1/facturas,/api/v1/facturas/**
+
+            - id: ms-envio
+              uri: http://localhost:9095
+              predicates:
+                - Path=/api/v1/envios,/api/v1/envios/**,/api/v1/rutas,/api/v1/rutas/**
+
+server:
+  port: 8200
