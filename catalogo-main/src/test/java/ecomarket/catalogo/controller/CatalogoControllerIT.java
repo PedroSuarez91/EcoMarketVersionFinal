@@ -1,6 +1,6 @@
 package ecomarket.catalogo.controller;
 
-import tools.jackson.databind.ObjectMapper;
+import tools.jackson.databind.json.JsonMapper;
 import ecomarket.catalogo.model.Catalogo;
 import ecomarket.catalogo.model.Producto;
 import ecomarket.catalogo.repository.CatalogoRepository;
@@ -42,7 +42,7 @@ class CatalogoControllerIT {
     @Autowired
     private ReseniaRepository reseniaRepository;
 
-    private ObjectMapper objectMapper = new ObjectMapper();
+    private JsonMapper objectMapper = JsonMapper.builder().build();
 
     @BeforeEach
     void cleanDb() {
