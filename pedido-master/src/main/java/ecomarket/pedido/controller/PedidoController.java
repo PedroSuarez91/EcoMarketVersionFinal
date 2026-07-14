@@ -53,7 +53,6 @@ public class PedidoController {
         return new ResponseEntity<>(pedidos, HttpStatus.OK);
     }
 
-    // Crea el pedido desde un carro; la direccion se pasa por su id (entidad propia)
     @PostMapping("/carro/{idCarro}")
     public ResponseEntity<Pedido> crearDesdeCarro(@PathVariable Long idCarro,
                                                   @RequestParam(required = false) Long idDireccion) {
@@ -64,7 +63,6 @@ public class PedidoController {
         return new ResponseEntity<>(nuevo, HttpStatus.CREATED);
     }
 
-    // Asigna o cambia la direccion de un pedido existente
     @PutMapping("/{id}/direccion/{idDireccion}")
     public ResponseEntity<Pedido> asignarDireccion(@PathVariable Long id, @PathVariable Long idDireccion) {
         Pedido actualizado = pedidoService.actualizarDireccion(id, idDireccion);

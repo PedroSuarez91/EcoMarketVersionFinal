@@ -22,16 +22,13 @@ public class ReseniaService {
     private ProductoRepository productoRepository;
 
     public Resenia registrarResenia(Resenia resenia) {
-        // 1. La resenia debe venir con un producto y su id
         if (resenia.getProducto() == null || resenia.getProducto().getIdProducto() == null) {
-            return null; // falta el producto -> no se guarda
+            return null;
         }
-        // 2. El producto referenciado debe existir en la base
         Producto producto = productoRepository.findById(resenia.getProducto().getIdProducto()).orElse(null);
         if (producto == null) {
-            return null; // el producto no existe -> no se guarda
+            return null;
         }
-        // 3. Todo correcto: asocia el producto real y guarda
         resenia.setProducto(producto);
         return reseniaRepository.save(resenia);
     }

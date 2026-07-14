@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ecomarket.catalogo.model.Resenia;
 import ecomarket.catalogo.service.ReseniaService;
+import jakarta.validation.Valid;
 
 
 @RestController
@@ -44,7 +45,7 @@ public class ReseniaController {
     }
 
     @PostMapping
-    public ResponseEntity<Resenia> postResenia(@RequestBody Resenia resenia) {
+    public ResponseEntity<Resenia> postResenia(@Valid @RequestBody Resenia resenia) {
         Resenia nueva = reseniaService.registrarResenia(resenia);
         if (nueva == null) {
             // el producto referenciado no existe o no se envio
@@ -54,7 +55,7 @@ public class ReseniaController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Resenia> putResenia(@PathVariable Long id, @RequestBody Resenia resenia) {
+    public ResponseEntity<Resenia> putResenia(@Valid @PathVariable Long id, @RequestBody Resenia resenia) {
         Resenia actualizada = reseniaService.actualizarResenia(id, resenia);
         if (actualizada == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

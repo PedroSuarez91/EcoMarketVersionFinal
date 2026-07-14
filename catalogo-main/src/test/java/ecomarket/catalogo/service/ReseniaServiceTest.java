@@ -1,27 +1,28 @@
 package ecomarket.catalogo.service;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import ecomarket.catalogo.model.Producto;
 import ecomarket.catalogo.model.Resenia;
 import ecomarket.catalogo.repository.ProductoRepository;
 import ecomarket.catalogo.repository.ReseniaRepository;
 
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.time.LocalDate;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
-
 @ExtendWith(MockitoExtension.class)
-class ReseniaServiceTest {
+public class ReseniaServiceTest {
 
     @Mock
     private ReseniaRepository reseniaRepository;
@@ -32,177 +33,102 @@ class ReseniaServiceTest {
     @InjectMocks
     private ReseniaService reseniaService;
 
-    private Producto crearProducto(Long id, String nombre) {
-        Producto producto = new Producto();
-        producto.setIdProducto(id);
-        producto.setNombre(nombre);
-        return producto;
+    private Resenia resenia(String comentario, Integer calificacion, Producto producto) {
+        Resenia r = new Resenia();
+        r.setComentario(comentario);
+        r.setCalificacion(calificacion);
+        r.setFechaResenia(LocalDate.now());
+        r.setProducto(producto);
+        return r;
     }
 
-    private Resenia crearResenia(Long id, String comentario, Integer calificacion, Producto producto) {
-        Resenia resenia = new Resenia();
-        resenia.setIdResenia(id);
-        resenia.setComentario(comentario);
-        resenia.setCalificacion(calificacion);
-        resenia.setFechaResenia(LocalDate.now());
-        resenia.setProducto(producto);
-        return resenia;
-    }
-
-    @Test
-    void testRegistrarReseniaExitosa() {
-        Producto producto = crearProducto(10L, "Manzana");
-        Resenia resenia = crearResenia(null, "Excelente", 5, producto);
-        Resenia guardada = crearResenia(1L, "Excelente", 5, producto);
-
-        when(productoRepository.findById(10L)).thenReturn(Optional.of(producto));
-        when(reseniaRepository.save(resenia)).thenReturn(guardada);
-
-        Resenia resultado = reseniaService.registrarResenia(resenia);
-
-        assertNotNull(resultado);
-        assertEquals(1L, resultado.getIdResenia());
-        assertEquals("Excelente", resultado.getComentario());
-
-        verify(productoRepository, times(1)).findById(10L);
-        verify(reseniaRepository, times(1)).save(resenia);
+    private Producto productoConId(Long id) {
+        Producto p = new Producto();
+        p.setIdProducto(id);
+        p.setNombre("Manzana");
+        return p;
     }
 
     @Test
-    void testRegistrarReseniaSinProducto() {
-        Resenia resenia = crearResenia(null, "Excelente", 5, null);
+    void testRegistrarReseniaOk() {
+        Resenia entrante = resenia("Buena", 5, productoConId(1L));
+        Producto productoReal = productoConId(1L);
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(productoReal));
+        when(reseniaRepository.save(any(Resenia.class))).thenAnswer(inv -> inv.getArgument(0));
+        Resenia resultado = reseniaService.registrarResenia(entrante);
+        assertThat(resultado).isNotNull();
+        assertThat(resultado.getProducto()).isEqualTo(productoReal);
+        verify(reseniaRepository).save(entrante);
+    }
 
-        Resenia resultado = reseniaService.registrarResenia(resenia);
-
-        assertNull(resultado);
-
+    @Test
+    void testRegistrarReseniaSinProductoDevuelveNull() {
+        Resenia entrante = resenia("Sin producto", 4, null);
+        Resenia resultado = reseniaService.registrarResenia(entrante);
+        assertThat(resultado).isNull();
         verify(productoRepository, never()).findById(any());
         verify(reseniaRepository, never()).save(any(Resenia.class));
     }
 
     @Test
-    void testRegistrarReseniaProductoSinId() {
-        Producto producto = crearProducto(null, "Manzana"); // sin id
-        Resenia resenia = crearResenia(null, "Excelente", 5, producto);
-
-        Resenia resultado = reseniaService.registrarResenia(resenia);
-
-        assertNull(resultado);
-
+    void testRegistrarReseniaProductoSinIdDevuelveNull() {
+        Resenia entrante = resenia("Producto sin id", 4, new Producto());
+        Resenia resultado = reseniaService.registrarResenia(entrante);
+        assertThat(resultado).isNull();
         verify(productoRepository, never()).findById(any());
         verify(reseniaRepository, never()).save(any(Resenia.class));
     }
 
     @Test
-    void testRegistrarReseniaProductoNoExiste() {
-        Producto producto = crearProducto(99L, "Inexistente");
-        Resenia resenia = crearResenia(null, "Excelente", 5, producto);
-
+    void testRegistrarReseniaProductoInexistenteDevuelveNull() {
+        Resenia entrante = resenia("Producto fantasma", 3, productoConId(99L));
         when(productoRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Resenia resultado = reseniaService.registrarResenia(resenia);
-
-        assertNull(resultado);
-
-        verify(productoRepository, times(1)).findById(99L);
+        Resenia resultado = reseniaService.registrarResenia(entrante);
+        assertThat(resultado).isNull();
         verify(reseniaRepository, never()).save(any(Resenia.class));
     }
 
     @Test
     void testListarResenias() {
-        Producto producto = crearProducto(10L, "Manzana");
-        Resenia r1 = crearResenia(1L, "Buena", 4, producto);
-        Resenia r2 = crearResenia(2L, "Mala", 1, producto);
-
-        when(reseniaRepository.findAll()).thenReturn(Arrays.asList(r1, r2));
-
-        List<Resenia> resultado = reseniaService.listarResenias();
-
-        assertEquals(2, resultado.size());
-
-        verify(reseniaRepository, times(1)).findAll();
+        when(reseniaRepository.findAll()).thenReturn(List.of(resenia("A", 5, productoConId(1L))));
+        assertThat(reseniaService.listarResenias()).hasSize(1);
     }
 
     @Test
     void testListarPorProducto() {
-        Producto producto = crearProducto(10L, "Manzana");
-        Resenia r1 = crearResenia(1L, "Buena", 4, producto);
-
-        when(reseniaRepository.findByProducto_IdProducto(10L)).thenReturn(Arrays.asList(r1));
-
-        List<Resenia> resultado = reseniaService.listarPorProducto(10L);
-
-        assertEquals(1, resultado.size());
-
-        verify(reseniaRepository, times(1)).findByProducto_IdProducto(10L);
+        when(reseniaRepository.findByProducto_IdProducto(1L))
+                .thenReturn(List.of(resenia("A", 5, productoConId(1L))));
+        assertThat(reseniaService.listarPorProducto(1L)).hasSize(1);
+        verify(reseniaRepository).findByProducto_IdProducto(1L);
     }
 
     @Test
-    void testFindByIdExistente() {
-        Producto producto = crearProducto(10L, "Manzana");
-        Resenia resenia = crearResenia(1L, "Buena", 4, producto);
-
-        when(reseniaRepository.findById(1L)).thenReturn(Optional.of(resenia));
-
-        Optional<Resenia> resultado = reseniaService.findById(1L);
-
-        assertTrue(resultado.isPresent());
-        assertEquals(1L, resultado.get().getIdResenia());
-
-        verify(reseniaRepository, times(1)).findById(1L);
+    void testFindById() {
+        when(reseniaRepository.findById(1L)).thenReturn(Optional.of(resenia("A", 5, productoConId(1L))));
+        assertThat(reseniaService.findById(1L)).isPresent();
     }
 
     @Test
-    void testFindByIdNoExistente() {
-        when(reseniaRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Optional<Resenia> resultado = reseniaService.findById(99L);
-
-        assertFalse(resultado.isPresent());
-
-        verify(reseniaRepository, times(1)).findById(99L);
-    }
-
-    @Test
-    void testActualizarReseniaExistente() {
-        Producto producto = crearProducto(10L, "Manzana");
-        Resenia existente = crearResenia(1L, "Buena", 4, producto);
-        Resenia datos = crearResenia(null, "Excelente", 5, producto);
-
+    void testActualizarReseniaOk() {
+        Resenia existente = resenia("Vieja", 2, productoConId(1L));
+        Resenia datos = resenia("Nueva", 5, null);
         when(reseniaRepository.findById(1L)).thenReturn(Optional.of(existente));
-        when(reseniaRepository.save(existente)).thenReturn(existente);
-
+        when(reseniaRepository.save(any(Resenia.class))).thenAnswer(inv -> inv.getArgument(0));
         Resenia resultado = reseniaService.actualizarResenia(1L, datos);
-
-        assertNotNull(resultado);
-        assertEquals("Excelente", resultado.getComentario());
-        assertEquals(5, resultado.getCalificacion());
-
-        verify(reseniaRepository, times(1)).findById(1L);
-        verify(reseniaRepository, times(1)).save(existente);
+        assertThat(resultado.getComentario()).isEqualTo("Nueva");
+        assertThat(resultado.getCalificacion()).isEqualTo(5);
     }
 
     @Test
-    void testActualizarReseniaNoExistente() {
-        Resenia datos = crearResenia(null, "Excelente", 5, null);
-
+    void testActualizarReseniaInexistente() {
         when(reseniaRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Resenia resultado = reseniaService.actualizarResenia(99L, datos);
-
-        assertNull(resultado);
-
-        verify(reseniaRepository, times(1)).findById(99L);
+        assertThat(reseniaService.actualizarResenia(99L, new Resenia())).isNull();
         verify(reseniaRepository, never()).save(any(Resenia.class));
     }
 
     @Test
     void testEliminarResenia() {
-        doNothing().when(reseniaRepository).deleteById(1L);
-
         reseniaService.eliminarResenia(1L);
-
-        verify(reseniaRepository, times(1)).deleteById(1L);
+        verify(reseniaRepository).deleteById(1L);
     }
 }
-

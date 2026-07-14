@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CascadeType;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -26,6 +27,7 @@ public class Pedido {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long idPedido;
 
     private Long idUsuario;
@@ -36,7 +38,6 @@ public class Pedido {
 
     private String tipoEntrega;
 
-    // Relacion a la entidad Direccion (gestionada dentro de pedido)
     @ManyToOne
     @JoinColumn(name = "id_direccion")
     private Direccion direccionEnvio;

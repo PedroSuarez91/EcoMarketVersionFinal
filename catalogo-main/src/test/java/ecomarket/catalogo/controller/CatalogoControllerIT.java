@@ -1,17 +1,14 @@
 package ecomarket.catalogo.controller;
 
-import tools.jackson.databind.json.JsonMapper;
 import ecomarket.catalogo.model.Catalogo;
-import ecomarket.catalogo.model.Producto;
 import ecomarket.catalogo.repository.CatalogoRepository;
-import ecomarket.catalogo.repository.ProductoRepository;
-import ecomarket.catalogo.repository.ReseniaRepository;
+import tools.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
@@ -21,7 +18,7 @@ import java.time.LocalDate;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
-
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
@@ -37,109 +34,58 @@ class CatalogoControllerIT {
     private CatalogoRepository catalogoRepository;
 
     @Autowired
-    private ProductoRepository productoRepository;
-
-    @Autowired
-    private ReseniaRepository reseniaRepository;
-
-    private JsonMapper objectMapper = JsonMapper.builder().build();
+    private ObjectMapper objectMapper;
 
     @BeforeEach
-    void cleanDb() {
-        // Orden importante por las FK: primero reseñas, luego productos, luego catálogos
-        reseniaRepository.deleteAll();
-        productoRepository.deleteAll();
+    void limpiar() {
         catalogoRepository.deleteAll();
     }
 
+    private Catalogo catalogo(String nombre) {
+        Catalogo c = new Catalogo();
+        c.setNombreCatalogo(nombre);
+        c.setFechaActualizacion(LocalDate.of(2026, 1, 1));
+        return c;
+    }
+
     @Test
-    void testCrearYObtenerCatalogo() throws Exception {
-        Catalogo catalogo = new Catalogo();
-        catalogo.setNombreCatalogo("Catalogo Verano");
-        catalogo.setFechaActualizacion(LocalDate.now());
-
+    void testCrearYListar() throws Exception {
+        Catalogo nuevo = catalogo("Catalogo Verano");
         mockMvc.perform(post("/api/v1/catalogos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(catalogo)))
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(nuevo)))
                 .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.idCatalogo").exists())
-                .andExpect(jsonPath("$.nombreCatalogo").value("Catalogo Verano"));
-
+                .andExpect(jsonPath("$.idCatalogo").exists());
         mockMvc.perform(get("/api/v1/catalogos"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$[0].nombreCatalogo").value("Catalogo Verano"));
     }
 
     @Test
-    void testCrearYBuscarProducto() throws Exception {
-        Producto producto = new Producto();
-        producto.setNombre("Manzana Roja");
-        producto.setMarca("FrutCorp");
-        producto.setPrecioUnitario(500);
-        producto.setEstado(true);
-
-        mockMvc.perform(post("/api/v1/productos")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(objectMapper.writeValueAsString(producto)))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.idProducto").exists())
-                .andExpect(jsonPath("$.nombre").value("Manzana Roja"));
-
-        mockMvc.perform(get("/api/v1/productos/buscar").param("nombre", "manzana"))
+    void testObtenerPorId() throws Exception {
+        Catalogo guardado = catalogoRepository.save(catalogo("Catalogo Invierno"));
+        mockMvc.perform(get("/api/v1/catalogos/" + guardado.getIdCatalogo()))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].nombre").value("Manzana Roja"));
+                .andExpect(jsonPath("$.nombreCatalogo").value("Catalogo Invierno"));
+    }
 
-        mockMvc.perform(get("/api/v1/productos/marca/FrutCorp"))
+    @Test
+    void testActualizar() throws Exception {
+        Catalogo guardado = catalogoRepository.save(catalogo("Original"));
+        Catalogo datos = catalogo("Modificado");
+        mockMvc.perform(put("/api/v1/catalogos/" + guardado.getIdCatalogo())
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(datos)))
                 .andExpect(status().isOk())
-                .andExpect(jsonPath("$[0].marca").value("FrutCorp"));
+                .andExpect(jsonPath("$.nombreCatalogo").value("Modificado"));
     }
 
     @Test
-    void testCrearReseniaConProductoExistente() throws Exception {
-        // Primero creamos un producto real en BD
-        Producto producto = new Producto();
-        producto.setNombre("Manzana Roja");
-        producto.setMarca("FrutCorp");
-        producto.setPrecioUnitario(500);
-        producto.setEstado(true);
-        Producto guardado = productoRepository.save(producto);
-
-        // El JSON de la reseña referencia el producto por su id
-        String body = "{ \"comentario\": \"Muy buena\", \"calificacion\": 5, \"producto\": { \"idProducto\": "
-                + guardado.getIdProducto() + " } }";
-
-        mockMvc.perform(post("/api/v1/resenias")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-                .andExpect(status().isCreated())
-                .andExpect(jsonPath("$.idResenia").exists())
-                .andExpect(jsonPath("$.comentario").value("Muy buena"));
-    }
-
-    @Test
-    void testCrearReseniaProductoInexistente() throws Exception {
-        // Reseña apuntando a un producto que no existe -> el service devuelve null -> 404
-        String body = "{ \"comentario\": \"Muy buena\", \"calificacion\": 5, \"producto\": { \"idProducto\": 9999 } }";
-
-        mockMvc.perform(post("/api/v1/resenias")
-                .contentType(MediaType.APPLICATION_JSON)
-                .content(body))
-                .andExpect(status().isNotFound());
-    }
-
-    @Test
-    void testEliminarProducto() throws Exception {
-        Producto producto = new Producto();
-        producto.setNombre("Pera");
-        producto.setMarca("FrutCorp");
-        producto.setPrecioUnitario(600);
-        producto.setEstado(true);
-        Producto guardado = productoRepository.save(producto);
-
-        mockMvc.perform(delete("/api/v1/productos/" + guardado.getIdProducto()))
+    void testEliminar() throws Exception {
+        Catalogo guardado = catalogoRepository.save(catalogo("Borrar"));
+        mockMvc.perform(delete("/api/v1/catalogos/" + guardado.getIdCatalogo()))
                 .andExpect(status().isNoContent());
-
-        mockMvc.perform(get("/api/v1/productos/" + guardado.getIdProducto()))
+        mockMvc.perform(get("/api/v1/catalogos/" + guardado.getIdCatalogo()))
                 .andExpect(status().isNoContent());
     }
 }

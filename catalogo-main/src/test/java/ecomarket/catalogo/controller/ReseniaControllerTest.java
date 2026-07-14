@@ -1,22 +1,22 @@
 package ecomarket.catalogo.controller;
 
-import tools.jackson.databind.ObjectMapper;
 import ecomarket.catalogo.model.Producto;
 import ecomarket.catalogo.model.Resenia;
 import ecomarket.catalogo.service.ReseniaService;
+import tools.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDate;
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 
 import static org.hamcrest.Matchers.hasSize;
 import static org.mockito.ArgumentMatchers.any;
@@ -32,126 +32,118 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public class ReseniaControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
 
-        
-        @MockitoBean
-        private ReseniaService reseniaService;
+    @MockitoBean
+    private ReseniaService reseniaService;
 
-        private ObjectMapper objectMapper = new ObjectMapper();
+    @Autowired
+    private ObjectMapper objectMapper;
 
-        private Resenia crearResenia(Long id, String comentario, Integer calificacion) {
-                Resenia resenia = new Resenia();
-                resenia.setIdResenia(id);
-                resenia.setComentario(comentario);
-                resenia.setCalificacion(calificacion);
-                resenia.setFechaResenia(LocalDate.now());
-                return resenia;
-        }
+    private Resenia resenia(Long id, String comentario, Integer calificacion) {
+        Resenia r = new Resenia();
+        r.setIdResenia(id);
+        r.setComentario(comentario);
+        r.setCalificacion(calificacion);
+        r.setFechaResenia(LocalDate.now());
+        return r;
+    }
 
-        private Resenia crearReseniaConProducto(Long id, String comentario, Integer calificacion, Long idProducto) {
-                Resenia resenia = crearResenia(id, comentario, calificacion);
-                Producto producto = new Producto();
-                producto.setIdProducto(idProducto);
-                resenia.setProducto(producto);
-                return resenia;
-        }
+    private Resenia reseniaConProducto(Long idProducto) {
+        Resenia r = resenia(null, "Buena", 5);
+        Producto p = new Producto();
+        p.setIdProducto(idProducto);
+        r.setProducto(p);
+        return r;
+    }
 
-        @Test
-        void testGetResenias() throws Exception {
-                Mockito.when(reseniaService.listarResenias())
-                                .thenReturn(Arrays.asList(crearResenia(1L, "Buena", 4), crearResenia(2L, "Mala", 1)));
+    @Test
+    void testGetReseniasConContenido() throws Exception {
+        Mockito.when(reseniaService.listarResenias())
+                .thenReturn(List.of(resenia(1L, "Buena", 5)));
 
-                mockMvc.perform(get("/api/v1/resenias"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(2)))
-                                .andExpect(jsonPath("$[0].comentario").value("Buena"));
-        }
+        mockMvc.perform(get("/api/v1/resenias"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].comentario").value("Buena"));
+    }
 
-        @Test
-        void testGetReseniasVacio() throws Exception {
-                Mockito.when(reseniaService.listarResenias()).thenReturn(Collections.emptyList());
+    @Test
+    void testGetReseniasVacio204() throws Exception {
+        Mockito.when(reseniaService.listarResenias()).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/resenias"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(get("/api/v1/resenias"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testGetPorProducto() throws Exception {
-                Mockito.when(reseniaService.listarPorProducto(10L))
-                                .thenReturn(Arrays.asList(crearResenia(1L, "Buena", 4)));
+    @Test
+    void testGetPorProducto200() throws Exception {
+        Mockito.when(reseniaService.listarPorProducto(1L))
+                .thenReturn(List.of(resenia(1L, "Buena", 5)));
 
-                mockMvc.perform(get("/api/v1/resenias/producto/10"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)));
-        }
+        mockMvc.perform(get("/api/v1/resenias/producto/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
 
-        @Test
-        void testGetPorProductoVacio() throws Exception {
-                Mockito.when(reseniaService.listarPorProducto(99L)).thenReturn(Collections.emptyList());
+    @Test
+    void testGetPorProducto204() throws Exception {
+        Mockito.when(reseniaService.listarPorProducto(1L)).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/resenias/producto/99"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(get("/api/v1/resenias/producto/1"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testPostResenia() throws Exception {
-                Resenia nueva = crearReseniaConProducto(null, "Excelente", 5, 10L);
-                Resenia guardada = crearReseniaConProducto(1L, "Excelente", 5, 10L);
+    @Test
+    void testPostReseniaOk201() throws Exception {
+        Mockito.when(reseniaService.registrarResenia(any(Resenia.class)))
+                .thenReturn(resenia(1L, "Buena", 5));
 
-                Mockito.when(reseniaService.registrarResenia(any(Resenia.class))).thenReturn(guardada);
+        mockMvc.perform(post("/api/v1/resenias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reseniaConProducto(1L))))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.idResenia").value(1L));
+    }
 
-                mockMvc.perform(post("/api/v1/resenias")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(nueva)))
-                                .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.idResenia").value(1L))
-                                .andExpect(jsonPath("$.comentario").value("Excelente"));
-        }
+    @Test
+    void testPostReseniaProductoInexistente404() throws Exception {
+        Mockito.when(reseniaService.registrarResenia(any(Resenia.class))).thenReturn(null);
 
-        @Test
-        void testPostReseniaNoEncontrada() throws Exception {
-                Resenia nueva = crearReseniaConProducto(null, "Excelente", 5, 99L);
+        mockMvc.perform(post("/api/v1/resenias")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(reseniaConProducto(99L))))
+                .andExpect(status().isNotFound());
+    }
 
-                Mockito.when(reseniaService.registrarResenia(any(Resenia.class))).thenReturn(null);
+    @Test
+    void testPutResenia200() throws Exception {
+        Mockito.when(reseniaService.actualizarResenia(eq(1L), any(Resenia.class)))
+                .thenReturn(resenia(1L, "Editada", 4));
 
-                mockMvc.perform(post("/api/v1/resenias")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(nueva)))
-                                .andExpect(status().isNotFound());
-        }
+        mockMvc.perform(put("/api/v1/resenias/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resenia(null, "Editada", 4))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.comentario").value("Editada"));
+    }
 
-        @Test
-        void testPutReseniaExistente() throws Exception {
-                Resenia actualizada = crearResenia(1L, "Actualizada", 3);
+    @Test
+    void testPutResenia404() throws Exception {
+        Mockito.when(reseniaService.actualizarResenia(eq(99L), any(Resenia.class))).thenReturn(null);
 
-                Mockito.when(reseniaService.actualizarResenia(eq(1L), any(Resenia.class))).thenReturn(actualizada);
+        mockMvc.perform(put("/api/v1/resenias/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(resenia(null, "X", 1))))
+                .andExpect(status().isNotFound());
+    }
 
-                mockMvc.perform(put("/api/v1/resenias/1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(actualizada)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.comentario").value("Actualizada"));
-        }
+    @Test
+    void testDeleteResenia204() throws Exception {
+        Mockito.doNothing().when(reseniaService).eliminarResenia(1L);
 
-        @Test
-        void testPutReseniaNoExistente() throws Exception {
-                Resenia datos = crearResenia(null, "Actualizada", 3);
-
-                Mockito.when(reseniaService.actualizarResenia(eq(99L), any(Resenia.class))).thenReturn(null);
-
-                mockMvc.perform(put("/api/v1/resenias/99")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(datos)))
-                                .andExpect(status().isNotFound());
-        }
-
-        @Test
-        void testDeleteResenia() throws Exception {
-                Mockito.doNothing().when(reseniaService).eliminarResenia(1L);
-
-                mockMvc.perform(delete("/api/v1/resenias/1"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(delete("/api/v1/resenias/1"))
+                .andExpect(status().isNoContent());
+    }
 }

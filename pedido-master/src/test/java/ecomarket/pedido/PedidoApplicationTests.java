@@ -8,9 +8,11 @@ import org.springframework.test.context.ActiveProfiles;
 @ActiveProfiles("test")
 class PedidoApplicationTests {
 
-    @Test
-    void mainEjecutaAplicacion() {
-        PedidoApplication.main(new String[]{
-        });
-    }
+@Test
+void mainEjecutaAplicacion() {
+    PedidoApplication.main(new String[]{
+            "--spring.profiles.active=test",
+            "--server.port=0"
+    });
+}
 }

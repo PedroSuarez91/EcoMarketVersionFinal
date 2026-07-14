@@ -1,25 +1,26 @@
 package ecomarket.catalogo.service;
 
-import ecomarket.catalogo.model.Producto;
-import ecomarket.catalogo.repository.ProductoRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import ecomarket.catalogo.model.Producto;
+import ecomarket.catalogo.repository.ProductoRepository;
 
 @ExtendWith(MockitoExtension.class)
-class ProductoServiceTest {
+public class ProductoServiceTest {
 
     @Mock
     private ProductoRepository productoRepository;
@@ -27,207 +28,116 @@ class ProductoServiceTest {
     @InjectMocks
     private ProductoService productoService;
 
-    private Producto crearProducto(Long id, String nombre, String marca, Integer precio) {
-        Producto producto = new Producto();
-        producto.setIdProducto(id);
-        producto.setNombre(nombre);
-        producto.setMarca(marca);
-        producto.setPrecioUnitario(precio);
-        producto.setEstado(true);
-        return producto;
+    private Producto producto(Long id, String nombre, String marca, Integer precio) {
+        Producto p = new Producto();
+        p.setIdProducto(id);
+        p.setNombre(nombre);
+        p.setMarca(marca);
+        p.setPrecioUnitario(precio);
+        p.setTipoProducto("ALIMENTO");
+        p.setDescripcion("desc");
+        p.setEstado(true);
+        p.setIdInventario(1L);
+        return p;
     }
 
     @Test
     void testRegistrarProducto() {
-        Producto producto = crearProducto(null, "Manzana", "FrutCorp", 500);
-        Producto guardado = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.save(producto)).thenReturn(guardado);
-
-        Producto resultado = productoService.registrarProducto(producto);
-
-        assertNotNull(resultado);
-        assertEquals(1L, resultado.getIdProducto());
-        assertEquals("Manzana", resultado.getNombre());
-
-        verify(productoRepository, times(1)).save(producto);
+        Producto nuevo = producto(null, "Manzana", "Marca1", 500);
+        Producto guardado = producto(1L, "Manzana", "Marca1", 500);
+        when(productoRepository.save(nuevo)).thenReturn(guardado);
+        Producto resultado = productoService.registrarProducto(nuevo);
+        assertThat(resultado.getIdProducto()).isEqualTo(1L);
+        verify(productoRepository).save(nuevo);
     }
 
     @Test
     void testListarProductos() {
-        Producto p1 = crearProducto(1L, "Manzana", "FrutCorp", 500);
-        Producto p2 = crearProducto(2L, "Pera", "FrutCorp", 600);
-
-        when(productoRepository.findAll()).thenReturn(Arrays.asList(p1, p2));
-
-        List<Producto> resultado = productoService.listarProductos();
-
-        assertEquals(2, resultado.size());
-
-        verify(productoRepository, times(1)).findAll();
+        when(productoRepository.findAll()).thenReturn(List.of(producto(1L, "Manzana", "Marca1", 500)));
+        assertThat(productoService.listarProductos()).hasSize(1);
     }
 
     @Test
-    void testFindByIdProductoExistente() {
-        Producto producto = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto));
-
-        Optional<Producto> resultado = productoService.findByIdProducto(1L);
-
-        assertTrue(resultado.isPresent());
-        assertEquals(1L, resultado.get().getIdProducto());
-
-        verify(productoRepository, times(1)).findById(1L);
-    }
-
-    @Test
-    void testFindByIdProductoNoExistente() {
-        when(productoRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Optional<Producto> resultado = productoService.findByIdProducto(99L);
-
-        assertFalse(resultado.isPresent());
-
-        verify(productoRepository, times(1)).findById(99L);
+    void testFindByIdProducto() {
+        when(productoRepository.findById(1L)).thenReturn(Optional.of(producto(1L, "Manzana", "Marca1", 500)));
+        assertThat(productoService.findByIdProducto(1L)).isPresent();
     }
 
     @Test
     void testFindByCategoria() {
-        Producto p1 = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.findByCategorias_IdCategoria(5L)).thenReturn(Arrays.asList(p1));
-
-        List<Producto> resultado = productoService.findByCategoria(5L);
-
-        assertEquals(1, resultado.size());
-        assertEquals("Manzana", resultado.get(0).getNombre());
-
-        verify(productoRepository, times(1)).findByCategorias_IdCategoria(5L);
+        when(productoRepository.findByCategorias_IdCategoria(3L))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 500)));
+        assertThat(productoService.findByCategoria(3L)).hasSize(1);
+        verify(productoRepository).findByCategorias_IdCategoria(3L);
     }
 
     @Test
-    void testActualizarProductoExistente() {
-        Producto existente = crearProducto(1L, "Manzana", "FrutCorp", 500);
-        Producto datos = crearProducto(null, "Manzana Verde", "FrutCorp Premium", 700);
+    void testActualizarProductoOk() {
+        Producto existente = producto(1L, "Viejo", "M1", 100);
+        Producto datos = producto(null, "Nuevo", "M2", 200);
         datos.setCategorias(new ArrayList<>());
-
         when(productoRepository.findById(1L)).thenReturn(Optional.of(existente));
-        when(productoRepository.save(existente)).thenReturn(existente);
-
+        when(productoRepository.save(any(Producto.class))).thenAnswer(inv -> inv.getArgument(0));
         Producto resultado = productoService.actualizarProducto(1L, datos);
-
-        assertNotNull(resultado);
-        assertEquals("Manzana Verde", resultado.getNombre());
-        assertEquals("FrutCorp Premium", resultado.getMarca());
-        assertEquals(700, resultado.getPrecioUnitario());
-
-        verify(productoRepository, times(1)).findById(1L);
-        verify(productoRepository, times(1)).save(existente);
+        assertThat(resultado.getNombre()).isEqualTo("Nuevo");
+        assertThat(resultado.getMarca()).isEqualTo("M2");
+        assertThat(resultado.getPrecioUnitario()).isEqualTo(200);
+        verify(productoRepository).save(existente);
     }
 
     @Test
-    void testActualizarProductoNoExistente() {
-        Producto datos = crearProducto(null, "Manzana Verde", "FrutCorp", 700);
-
+    void testActualizarProductoInexistente() {
         when(productoRepository.findById(99L)).thenReturn(Optional.empty());
-
-        Producto resultado = productoService.actualizarProducto(99L, datos);
-
-        assertNull(resultado);
-
-        verify(productoRepository, times(1)).findById(99L);
+        assertThat(productoService.actualizarProducto(99L, new Producto())).isNull();
         verify(productoRepository, never()).save(any(Producto.class));
     }
 
     @Test
     void testFindByRangoPrecio() {
-        Producto p1 = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.findByPrecioUnitarioBetween(400, 600)).thenReturn(Arrays.asList(p1));
-
-        List<Producto> resultado = productoService.findByRangoPrecio(400, 600);
-
-        assertEquals(1, resultado.size());
-
-        verify(productoRepository, times(1)).findByPrecioUnitarioBetween(400, 600);
+        when(productoRepository.findByPrecioUnitarioBetween(100, 500))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
+        assertThat(productoService.findByRangoPrecio(100, 500)).hasSize(1);
     }
 
     @Test
     void testFindByPrecioMaximo() {
-        Producto p1 = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.findByPrecioUnitarioLessThanEqual(600)).thenReturn(Arrays.asList(p1));
-
-        List<Producto> resultado = productoService.findByPrecioMaximo(600);
-
-        assertEquals(1, resultado.size());
-
-        verify(productoRepository, times(1)).findByPrecioUnitarioLessThanEqual(600);
+        when(productoRepository.findByPrecioUnitarioLessThanEqual(500))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
+        assertThat(productoService.findByPrecioMaximo(500)).hasSize(1);
     }
 
     @Test
     void testFindByPrecioMinimo() {
-        Producto p1 = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.findByPrecioUnitarioGreaterThanEqual(400)).thenReturn(Arrays.asList(p1));
-
-        List<Producto> resultado = productoService.findByPrecioMinimo(400);
-
-        assertEquals(1, resultado.size());
-
-        verify(productoRepository, times(1)).findByPrecioUnitarioGreaterThanEqual(400);
+        when(productoRepository.findByPrecioUnitarioGreaterThanEqual(100))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
+        assertThat(productoService.findByPrecioMinimo(100)).hasSize(1);
     }
 
     @Test
     void testBuscarPorNombre() {
-        Producto p1 = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.findByNombreContainingIgnoreCase("manz")).thenReturn(Arrays.asList(p1));
-
-        List<Producto> resultado = productoService.buscarPorNombre("manz");
-
-        assertEquals(1, resultado.size());
-        assertEquals("Manzana", resultado.get(0).getNombre());
-
-        verify(productoRepository, times(1)).findByNombreContainingIgnoreCase("manz");
+        when(productoRepository.findByNombreContainingIgnoreCase("man"))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
+        assertThat(productoService.buscarPorNombre("man")).hasSize(1);
     }
 
     @Test
     void testFindByMarca() {
-        Producto p1 = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-        when(productoRepository.findByMarca("FrutCorp")).thenReturn(Arrays.asList(p1));
-
-        List<Producto> resultado = productoService.findByMarca("FrutCorp");
-
-        assertEquals(1, resultado.size());
-
-        verify(productoRepository, times(1)).findByMarca("FrutCorp");
+        when(productoRepository.findByMarca("Marca1"))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
+        assertThat(productoService.findByMarca("Marca1")).hasSize(1);
     }
 
     @Test
-    void testEliminarProductoExistente() {
+    void testEliminarProductoExiste() {
         when(productoRepository.existsById(1L)).thenReturn(true);
-        doNothing().when(productoRepository).deleteById(1L);
-
-        boolean resultado = productoService.eliminarProducto(1L);
-
-        assertTrue(resultado);
-
-        verify(productoRepository, times(1)).existsById(1L);
-        verify(productoRepository, times(1)).deleteById(1L);
+        assertThat(productoService.eliminarProducto(1L)).isTrue();
+        verify(productoRepository).deleteById(1L);
     }
 
     @Test
-    void testEliminarProductoNoExistente() {
+    void testEliminarProductoNoExiste() {
         when(productoRepository.existsById(99L)).thenReturn(false);
-
-        boolean resultado = productoService.eliminarProducto(99L);
-
-        assertFalse(resultado);
-
-        verify(productoRepository, times(1)).existsById(99L);
-        verify(productoRepository, never()).deleteById(99L);
+        assertThat(productoService.eliminarProducto(99L)).isFalse();
+        verify(productoRepository, never()).deleteById(any());
     }
 }

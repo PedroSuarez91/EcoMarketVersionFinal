@@ -17,6 +17,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ecomarket.catalogo.model.Producto;
 import ecomarket.catalogo.service.ProductoService;
+import jakarta.validation.Valid;
+
 @RestController
 @RequestMapping("/api/v1/productos")
 public class ProductoController {
@@ -43,7 +45,7 @@ public class ProductoController {
     }
 
     @PostMapping
-    public ResponseEntity<Producto> postProducto(@RequestBody Producto producto) {
+    public ResponseEntity<Producto> postProducto(@Valid @RequestBody Producto producto) {
         try {
             return new ResponseEntity<>(productoService.registrarProducto(producto), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -52,15 +54,13 @@ public class ProductoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Producto> putProducto(@PathVariable Long id, @RequestBody Producto producto) {
+    public ResponseEntity<Producto> putProducto(@Valid @PathVariable Long id, @RequestBody Producto producto) {
         Producto actualizado = productoService.actualizarProducto(id, producto);
         if (actualizado == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
         return new ResponseEntity<>(actualizado, HttpStatus.OK);
     }
-
-    // Busquedas (metodos del diagrama)
 
     @GetMapping("/categoria/{idCategoria}")
     public ResponseEntity<List<Producto>> getPorCategoria(@PathVariable Long idCategoria) {

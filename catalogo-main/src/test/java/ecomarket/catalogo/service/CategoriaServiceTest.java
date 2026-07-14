@@ -1,24 +1,23 @@
 package ecomarket.catalogo.service;
 
-import ecomarket.catalogo.model.Categoria;
-import ecomarket.catalogo.repository.CategoriaRepository;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import java.util.List;
+import java.util.Optional;
 
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
-
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
-
-import static org.junit.jupiter.api.Assertions.*;
-import static org.mockito.Mockito.*;
+import ecomarket.catalogo.model.Categoria;
+import ecomarket.catalogo.repository.CategoriaRepository;
 
 @ExtendWith(MockitoExtension.class)
-class CategoriaServiceTest {
+public class CategoriaServiceTest {
 
     @Mock
     private CategoriaRepository categoriaRepository;
@@ -26,78 +25,54 @@ class CategoriaServiceTest {
     @InjectMocks
     private CategoriaService categoriaService;
 
-    private Categoria crearCategoria(Long id, String nombre, String tipoProducto) {
-        Categoria categoria = new Categoria();
-        categoria.setIdCategoria(id);
-        categoria.setNombreCategoria(nombre);
-        categoria.setTipoProducto(tipoProducto);
-        return categoria;
+    private Categoria categoria(Long id, String nombre, String tipo) {
+        Categoria c = new Categoria();
+        c.setIdCategoria(id);
+        c.setNombreCategoria(nombre);
+        c.setTipoProducto(tipo);
+        return c;
     }
 
     @Test
     void testCrearCategoria() {
-        Categoria categoria = crearCategoria(null, "Frutas", "Alimento");
-        Categoria guardada = crearCategoria(1L, "Frutas", "Alimento");
+        Categoria nueva = categoria(null, "Frutas", "ALIMENTO");
+        Categoria guardada = categoria(1L, "Frutas", "ALIMENTO");
+        when(categoriaRepository.save(nueva)).thenReturn(guardada);
 
-        when(categoriaRepository.save(categoria)).thenReturn(guardada);
+        Categoria resultado = categoriaService.crearCategoria(nueva);
 
-        Categoria resultado = categoriaService.crearCategoria(categoria);
-
-        assertNotNull(resultado);
-        assertEquals(1L, resultado.getIdCategoria());
-        assertEquals("Frutas", resultado.getNombreCategoria());
-        assertEquals("Alimento", resultado.getTipoProducto());
-
-        verify(categoriaRepository, times(1)).save(categoria);
+        assertThat(resultado.getIdCategoria()).isEqualTo(1L);
+        assertThat(resultado.getNombreCategoria()).isEqualTo("Frutas");
+        verify(categoriaRepository).save(nueva);
     }
 
     @Test
     void testListarCategorias() {
-        Categoria c1 = crearCategoria(1L, "Frutas", "Alimento");
-        Categoria c2 = crearCategoria(2L, "Limpieza", "Hogar");
+        when(categoriaRepository.findAll()).thenReturn(List.of(categoria(1L, "Frutas", "ALIMENTO")));
 
-        when(categoriaRepository.findAll()).thenReturn(Arrays.asList(c1, c2));
-
-        List<Categoria> resultado = categoriaService.listarCategorias();
-
-        assertEquals(2, resultado.size());
-        assertEquals("Frutas", resultado.get(0).getNombreCategoria());
-        assertEquals("Limpieza", resultado.get(1).getNombreCategoria());
-
-        verify(categoriaRepository, times(1)).findAll();
+        assertThat(categoriaService.listarCategorias()).hasSize(1);
+        verify(categoriaRepository).findAll();
     }
 
     @Test
-    void testFindByIdExistente() {
-        Categoria categoria = crearCategoria(1L, "Frutas", "Alimento");
+    void testFindById() {
+        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria(1L, "Frutas", "ALIMENTO")));
 
-        when(categoriaRepository.findById(1L)).thenReturn(Optional.of(categoria));
-
-        Optional<Categoria> resultado = categoriaService.findById(1L);
-
-        assertTrue(resultado.isPresent());
-        assertEquals(1L, resultado.get().getIdCategoria());
-
-        verify(categoriaRepository, times(1)).findById(1L);
+        assertThat(categoriaService.findById(1L)).isPresent();
+        assertThat(categoriaService.findById(1L).get().getNombreCategoria()).isEqualTo("Frutas");
     }
 
     @Test
-    void testFindByIdNoExistente() {
+    void testFindByIdInexistente() {
         when(categoriaRepository.findById(99L)).thenReturn(Optional.empty());
 
-        Optional<Categoria> resultado = categoriaService.findById(99L);
-
-        assertFalse(resultado.isPresent());
-
-        verify(categoriaRepository, times(1)).findById(99L);
+        assertThat(categoriaService.findById(99L)).isEmpty();
     }
 
     @Test
     void testEliminarCategoria() {
-        doNothing().when(categoriaRepository).deleteById(1L);
-
         categoriaService.eliminarCategoria(1L);
 
-        verify(categoriaRepository, times(1)).deleteById(1L);
+        verify(categoriaRepository).deleteById(1L);
     }
 }

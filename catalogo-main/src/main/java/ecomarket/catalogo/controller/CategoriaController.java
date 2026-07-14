@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ecomarket.catalogo.model.Categoria;
 import ecomarket.catalogo.service.CategoriaService;
+import jakarta.validation.Valid;
 
 
 @RestController
@@ -43,7 +44,7 @@ public class CategoriaController {
     }
 
     @PostMapping
-    public ResponseEntity<Categoria> postCategoria(@RequestBody Categoria categoria) {
+    public ResponseEntity<Categoria> postCategoria(@Valid @RequestBody Categoria categoria) {
         try {
             return new ResponseEntity<>(categoriaService.crearCategoria(categoria), HttpStatus.CREATED);
         } catch (Exception e) {

@@ -2,6 +2,8 @@ package ecomarket.cupon.controller;
 
 import ecomarket.cupon.model.Cupon;
 import ecomarket.cupon.service.CuponService;
+import jakarta.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -23,7 +25,7 @@ public class CuponController {
     private CuponService cuponService;
 
     @PostMapping
-    public ResponseEntity<Cupon> guardar(@RequestBody Cupon cupon) {
+    public ResponseEntity<Cupon> guardar(@Valid @RequestBody Cupon cupon) {
         try {
             return new ResponseEntity<>(cuponService.guardar(cupon), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -65,7 +67,7 @@ public class CuponController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Cupon> actualizar(@PathVariable Long id, @RequestBody Cupon datos) {
+    public ResponseEntity<Cupon> actualizar(@Valid @PathVariable Long id, @RequestBody Cupon datos) {
         Cupon actualizado = cuponService.actualizar(id, datos);
         if (actualizado == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

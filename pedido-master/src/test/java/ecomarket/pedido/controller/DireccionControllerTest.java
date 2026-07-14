@@ -129,4 +129,13 @@ public class DireccionControllerTest {
                         .content(objectMapper.writeValueAsString(nueva)))
                 .andExpect(status().isConflict());
     }
+
+    @Test
+    void testPostDireccionInvalidaDevuelve400() throws Exception {
+        Direccion invalida = new Direccion(null, "", "123", "RM", "", "Providencia", -5);
+        mockMvc.perform(post("/api/v1/direcciones")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(invalida)))
+                .andExpect(status().isBadRequest());
+    }
 }

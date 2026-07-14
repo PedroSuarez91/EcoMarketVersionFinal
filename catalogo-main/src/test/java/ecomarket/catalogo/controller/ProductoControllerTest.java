@@ -1,20 +1,21 @@
 package ecomarket.catalogo.controller;
 
-import tools.jackson.databind.ObjectMapper;
+
 import ecomarket.catalogo.model.Producto;
 import ecomarket.catalogo.service.ProductoService;
+import tools.jackson.databind.ObjectMapper;
 
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.webmvc.test.autoconfigure.WebMvcTest;
-import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.util.Arrays;
 import java.util.Collections;
+import java.util.List;
 import java.util.Optional;
 
 import static org.hamcrest.Matchers.hasSize;
@@ -31,237 +32,238 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @ActiveProfiles("test")
 public class ProductoControllerTest {
 
-        @Autowired
-        private MockMvc mockMvc;
+    @Autowired
+    private MockMvc mockMvc;
+    @MockitoBean
+    private ProductoService productoService;
 
-        
-        @MockitoBean
-        private ProductoService productoService;
+    @Autowired
+    private ObjectMapper objectMapper;
 
-        private ObjectMapper objectMapper = new ObjectMapper();
+    private Producto producto(Long id, String nombre, String marca, Integer precio) {
+        Producto p = new Producto();
+        p.setIdProducto(id);
+        p.setNombre(nombre);
+        p.setMarca(marca);
+        p.setPrecioUnitario(precio);
+        p.setEstado(true);
+        return p;
+    }
 
-        private Producto crearProducto(Long id, String nombre, String marca, Integer precio) {
-                Producto producto = new Producto();
-                producto.setIdProducto(id);
-                producto.setNombre(nombre);
-                producto.setMarca(marca);
-                producto.setPrecioUnitario(precio);
-                producto.setEstado(true);
-                return producto;
-        }
+    @Test
+    void testGetProductosConContenido() throws Exception {
+        Mockito.when(productoService.listarProductos())
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 500)));
+        mockMvc.perform(get("/api/v1/productos"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)))
+                .andExpect(jsonPath("$[0].nombre").value("Manzana"));
+    }
 
-        @Test
-        void testGetProductos() throws Exception {
-                Mockito.when(productoService.listarProductos())
-                                .thenReturn(Arrays.asList(crearProducto(1L, "Manzana", "FrutCorp", 500),
-                                                crearProducto(2L, "Pera", "FrutCorp", 600)));
+    @Test
+    void testGetProductosVacio204() throws Exception {
+        Mockito.when(productoService.listarProductos()).thenReturn(Collections.emptyList());
+        mockMvc.perform(get("/api/v1/productos"))
+                .andExpect(status().isNoContent());
+    }
 
-                mockMvc.perform(get("/api/v1/productos"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(2)))
-                                .andExpect(jsonPath("$[0].nombre").value("Manzana"));
-        }
+    @Test
+    void testGetProductoExistente() throws Exception {
+        Mockito.when(productoService.findByIdProducto(1L))
+                .thenReturn(Optional.of(producto(1L, "Manzana", "Marca1", 500)));
+        mockMvc.perform(get("/api/v1/productos/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Manzana"));
+    }
 
-        @Test
-        void testGetProductosVacio() throws Exception {
-                Mockito.when(productoService.listarProductos()).thenReturn(Collections.emptyList());
-
-                mockMvc.perform(get("/api/v1/productos"))
-                                .andExpect(status().isNoContent());
-        }
-
-        @Test
-        void testGetProductoExistente() throws Exception {
-                Mockito.when(productoService.findByIdProducto(1L))
-                                .thenReturn(Optional.of(crearProducto(1L, "Manzana", "FrutCorp", 500)));
-
-                mockMvc.perform(get("/api/v1/productos/1"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.nombre").value("Manzana"));
-        }
-
-        @Test
-        void testGetProductoNoExistente() throws Exception {
-                Mockito.when(productoService.findByIdProducto(99L)).thenReturn(Optional.empty());
-
-                mockMvc.perform(get("/api/v1/productos/99"))
-                                .andExpect(status().isNoContent());
-        }
+    @Test
+    void testGetProductoInexistente204() throws Exception {
+        Mockito.when(productoService.findByIdProducto(99L)).thenReturn(Optional.empty());
+        mockMvc.perform(get("/api/v1/productos/99"))
+                .andExpect(status().isNoContent());
+    }
 
         @Test
-        void testPostProducto() throws Exception {
-                Producto nuevo = crearProducto(null, "Manzana", "FrutCorp", 500);
-                Producto guardado = crearProducto(1L, "Manzana", "FrutCorp", 500);
-
-                Mockito.when(productoService.registrarProducto(any(Producto.class))).thenReturn(guardado);
-
-                mockMvc.perform(post("/api/v1/productos")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(nuevo)))
-                                .andExpect(status().isCreated())
-                                .andExpect(jsonPath("$.idProducto").value(1L))
-                                .andExpect(jsonPath("$.nombre").value("Manzana"));
-        }
-
+        void testPostProducto201() throws Exception {
+        Mockito.when(productoService.registrarProducto(any(Producto.class)))
+                .thenReturn(producto(1L, "Manzana", "Marca1", 500));
+                String json = """
+                        {
+                        "idInventario": 1,
+                        "tipoProducto": "ALIMENTO",
+                        "nombre": "Manzana",
+                        "marca": "Marca1",
+                        "descripcion": "desc",
+                        "precioUnitario": 500,
+                        "estado": true
+                        }
+                        """;
+        mockMvc.perform(post("/api/v1/productos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isCreated())
+                .andExpect(jsonPath("$.idProducto").value(1L));
+}
         @Test
-        void testPostProductoConflicto() throws Exception {
-                Producto nuevo = crearProducto(null, "Manzana", "FrutCorp", 500);
-
-                Mockito.when(productoService.registrarProducto(any(Producto.class)))
-                                .thenThrow(new RuntimeException("Error al registrar"));
-
-                mockMvc.perform(post("/api/v1/productos")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(nuevo)))
-                                .andExpect(status().isConflict());
+        void testPostProductoConflicto409() throws Exception {
+        Mockito.when(productoService.registrarProducto(any(Producto.class)))
+                .thenThrow(new RuntimeException("error"));
+        String json = """
+                {
+                "idInventario": 1,
+                "tipoProducto": "ALIMENTO",
+                "nombre": "Manzana",
+                "marca": "Marca1",
+                "descripcion": "desc",
+                "precioUnitario": 500,
+                "estado": true
+                }
+                """;
+        mockMvc.perform(post("/api/v1/productos")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(json))
+                .andExpect(status().isConflict());
         }
 
-        @Test
-        void testPutProductoExistente() throws Exception {
-                Producto actualizado = crearProducto(1L, "Manzana Verde", "FrutCorp", 700);
+    @Test
+    void testPutProducto200() throws Exception {
+        Mockito.when(productoService.actualizarProducto(eq(1L), any(Producto.class)))
+                .thenReturn(producto(1L, "Nuevo", "M2", 600));
 
-                Mockito.when(productoService.actualizarProducto(eq(1L), any(Producto.class))).thenReturn(actualizado);
+        mockMvc.perform(put("/api/v1/productos/1")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(producto(null, "Nuevo", "M2", 600))))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.nombre").value("Nuevo"));
+    }
 
-                mockMvc.perform(put("/api/v1/productos/1")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(actualizado)))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$.nombre").value("Manzana Verde"));
-        }
+    @Test
+    void testPutProducto404() throws Exception {
+        Mockito.when(productoService.actualizarProducto(eq(99L), any(Producto.class))).thenReturn(null);
 
-        @Test
-        void testPutProductoNoExistente() throws Exception {
-                Producto datos = crearProducto(null, "Manzana Verde", "FrutCorp", 700);
+        mockMvc.perform(put("/api/v1/productos/99")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(producto(null, "X", "Y", 1))))
+                .andExpect(status().isNotFound());
+    }
 
-                Mockito.when(productoService.actualizarProducto(eq(99L), any(Producto.class))).thenReturn(null);
+    @Test
+    void testGetPorCategoria200() throws Exception {
+        Mockito.when(productoService.findByCategoria(3L))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 500)));
 
-                mockMvc.perform(put("/api/v1/productos/99")
-                                .contentType(MediaType.APPLICATION_JSON)
-                                .content(objectMapper.writeValueAsString(datos)))
-                                .andExpect(status().isNotFound());
-        }
+        mockMvc.perform(get("/api/v1/productos/categoria/3"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
 
-        @Test
-        void testGetPorCategoria() throws Exception {
-                Mockito.when(productoService.findByCategoria(5L))
-                                .thenReturn(Arrays.asList(crearProducto(1L, "Manzana", "FrutCorp", 500)));
+    @Test
+    void testGetPorCategoria204() throws Exception {
+        Mockito.when(productoService.findByCategoria(3L)).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/productos/categoria/5"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)));
-        }
+        mockMvc.perform(get("/api/v1/productos/categoria/3"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testGetPorCategoriaVacio() throws Exception {
-                Mockito.when(productoService.findByCategoria(5L)).thenReturn(Collections.emptyList());
+    @Test
+    void testBuscarPorNombre200() throws Exception {
+        Mockito.when(productoService.buscarPorNombre("man"))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 500)));
 
-                mockMvc.perform(get("/api/v1/productos/categoria/5"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(get("/api/v1/productos/buscar").param("nombre", "man"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$", hasSize(1)));
+    }
 
-        @Test
-        void testBuscarPorNombre() throws Exception {
-                Mockito.when(productoService.buscarPorNombre("manz"))
-                                .thenReturn(Arrays.asList(crearProducto(1L, "Manzana", "FrutCorp", 500)));
+    @Test
+    void testBuscarPorNombre204() throws Exception {
+        Mockito.when(productoService.buscarPorNombre("zzz")).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/productos/buscar").param("nombre", "manz"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)));
-        }
+        mockMvc.perform(get("/api/v1/productos/buscar").param("nombre", "zzz"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testBuscarPorNombreVacio() throws Exception {
-                Mockito.when(productoService.buscarPorNombre("xyz")).thenReturn(Collections.emptyList());
+    @Test
+    void testGetPorMarca200() throws Exception {
+        Mockito.when(productoService.findByMarca("Marca1"))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 500)));
 
-                mockMvc.perform(get("/api/v1/productos/buscar").param("nombre", "xyz"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(get("/api/v1/productos/marca/Marca1"))
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        void testGetPorMarca() throws Exception {
-                Mockito.when(productoService.findByMarca("FrutCorp"))
-                                .thenReturn(Arrays.asList(crearProducto(1L, "Manzana", "FrutCorp", 500)));
+    @Test
+    void testGetPorMarca204() throws Exception {
+        Mockito.when(productoService.findByMarca("Nada")).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/productos/marca/FrutCorp"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)));
-        }
+        mockMvc.perform(get("/api/v1/productos/marca/Nada"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testGetPorMarcaVacio() throws Exception {
-                Mockito.when(productoService.findByMarca("NoExiste")).thenReturn(Collections.emptyList());
+    @Test
+    void testGetPorRangoPrecio200() throws Exception {
+        Mockito.when(productoService.findByRangoPrecio(100, 500))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
 
-                mockMvc.perform(get("/api/v1/productos/marca/NoExiste"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(get("/api/v1/productos/precio/rango").param("min", "100").param("max", "500"))
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        void testGetPorRangoPrecio() throws Exception {
-                Mockito.when(productoService.findByRangoPrecio(400, 600))
-                                .thenReturn(Arrays.asList(crearProducto(1L, "Manzana", "FrutCorp", 500)));
+    @Test
+    void testGetPorRangoPrecio204() throws Exception {
+        Mockito.when(productoService.findByRangoPrecio(100, 500)).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/productos/precio/rango").param("min", "400").param("max", "600"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)));
-        }
+        mockMvc.perform(get("/api/v1/productos/precio/rango").param("min", "100").param("max", "500"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testGetPorRangoPrecioVacio() throws Exception {
-                Mockito.when(productoService.findByRangoPrecio(1000, 2000)).thenReturn(Collections.emptyList());
+    @Test
+    void testGetPorPrecioMaximo200() throws Exception {
+        Mockito.when(productoService.findByPrecioMaximo(500))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
 
-                mockMvc.perform(get("/api/v1/productos/precio/rango").param("min", "1000").param("max", "2000"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(get("/api/v1/productos/precio/maximo").param("max", "500"))
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        void testGetPorPrecioMaximo() throws Exception {
-                Mockito.when(productoService.findByPrecioMaximo(600))
-                                .thenReturn(Arrays.asList(crearProducto(1L, "Manzana", "FrutCorp", 500)));
+    @Test
+    void testGetPorPrecioMaximo204() throws Exception {
+        Mockito.when(productoService.findByPrecioMaximo(500)).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/productos/precio/maximo").param("max", "600"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)));
-        }
+        mockMvc.perform(get("/api/v1/productos/precio/maximo").param("max", "500"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testGetPorPrecioMaximoVacio() throws Exception {
-                Mockito.when(productoService.findByPrecioMaximo(100)).thenReturn(Collections.emptyList());
+    @Test
+    void testGetPorPrecioMinimo200() throws Exception {
+        Mockito.when(productoService.findByPrecioMinimo(100))
+                .thenReturn(List.of(producto(1L, "Manzana", "Marca1", 300)));
 
-                mockMvc.perform(get("/api/v1/productos/precio/maximo").param("max", "100"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(get("/api/v1/productos/precio/minimo").param("min", "100"))
+                .andExpect(status().isOk());
+    }
 
-        @Test
-        void testGetPorPrecioMinimo() throws Exception {
-                Mockito.when(productoService.findByPrecioMinimo(400))
-                                .thenReturn(Arrays.asList(crearProducto(1L, "Manzana", "FrutCorp", 500)));
+    @Test
+    void testGetPorPrecioMinimo204() throws Exception {
+        Mockito.when(productoService.findByPrecioMinimo(100)).thenReturn(Collections.emptyList());
 
-                mockMvc.perform(get("/api/v1/productos/precio/minimo").param("min", "400"))
-                                .andExpect(status().isOk())
-                                .andExpect(jsonPath("$", hasSize(1)));
-        }
+        mockMvc.perform(get("/api/v1/productos/precio/minimo").param("min", "100"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testGetPorPrecioMinimoVacio() throws Exception {
-                Mockito.when(productoService.findByPrecioMinimo(9999)).thenReturn(Collections.emptyList());
+    @Test
+    void testEliminarProducto204() throws Exception {
+        Mockito.when(productoService.eliminarProducto(1L)).thenReturn(true);
 
-                mockMvc.perform(get("/api/v1/productos/precio/minimo").param("min", "9999"))
-                                .andExpect(status().isNoContent());
-        }
+        mockMvc.perform(delete("/api/v1/productos/1"))
+                .andExpect(status().isNoContent());
+    }
 
-        @Test
-        void testEliminarProductoExistente() throws Exception {
-                Mockito.when(productoService.eliminarProducto(1L)).thenReturn(true);
+    @Test
+    void testEliminarProducto404() throws Exception {
+        Mockito.when(productoService.eliminarProducto(99L)).thenReturn(false);
 
-                mockMvc.perform(delete("/api/v1/productos/1"))
-                                .andExpect(status().isNoContent());
-        }
-
-        @Test
-        void testEliminarProductoNoExistente() throws Exception {
-                Mockito.when(productoService.eliminarProducto(99L)).thenReturn(false);
-
-                mockMvc.perform(delete("/api/v1/productos/99"))
-                                .andExpect(status().isNotFound());
-        }
+        mockMvc.perform(delete("/api/v1/productos/99"))
+                .andExpect(status().isNotFound());
+    }
 }

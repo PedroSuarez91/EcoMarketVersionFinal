@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ecomarket.pedido.model.Direccion;
 import ecomarket.pedido.service.DireccionService;
+import jakarta.validation.Valid;
 
 
 @RestController
@@ -45,7 +46,7 @@ public class DireccionController {
     }
 
     @PostMapping
-    public ResponseEntity<Direccion> postDireccion(@RequestBody Direccion direccion) {
+    public ResponseEntity<Direccion> postDireccion(@Valid @RequestBody Direccion direccion) {
         try {
             return new ResponseEntity<>(direccionService.guardarDireccion(direccion), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -54,7 +55,7 @@ public class DireccionController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Direccion> putDireccion(@PathVariable Long id, @RequestBody Direccion direccion) {
+    public ResponseEntity<Direccion> putDireccion(@Valid @PathVariable Long id, @RequestBody Direccion direccion) {
         Direccion actualizada = direccionService.actualizar(id, direccion);
         if (actualizada == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);

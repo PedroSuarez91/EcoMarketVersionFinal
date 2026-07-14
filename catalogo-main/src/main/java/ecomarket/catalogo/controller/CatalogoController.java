@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import ecomarket.catalogo.model.Catalogo;
 import ecomarket.catalogo.service.CatalogoService;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/v1/catalogos")
@@ -43,7 +44,7 @@ public class CatalogoController {
     }
 
     @PostMapping
-    public ResponseEntity<Catalogo> postCatalogo(@RequestBody Catalogo catalogo) {
+    public ResponseEntity<Catalogo> postCatalogo(@Valid @RequestBody Catalogo catalogo) {
         try {
             return new ResponseEntity<>(catalogoService.crearCatalogo(catalogo), HttpStatus.CREATED);
         } catch (Exception e) {
@@ -52,7 +53,7 @@ public class CatalogoController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<Catalogo> putCatalogo(@PathVariable Long id, @RequestBody Catalogo catalogo) {
+    public ResponseEntity<Catalogo> putCatalogo(@Valid @PathVariable Long id, @RequestBody Catalogo catalogo) {
         Catalogo actualizado = catalogoService.actualizarCatalogo(id, catalogo);
         if (actualizado == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
