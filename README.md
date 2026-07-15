@@ -179,7 +179,7 @@ curl http://localhost:8200/api/v1/envios/1
 | usuario-ms | http://localhost:8081/doc/swagger-ui.html | http://localhost:8081/v3/api-docs |
 | proveedor-ms | http://localhost:8082/doc/swagger-ui.html | http://localhost:8082/v3/api-docs |
 | carro-ms | http://localhost:8083/doc/swagger-ui.html | http://localhost:8083/v3/api-docs |
-| sucursal-ms | http://localhost:8084/swagger-ui/index.html ⚠️ | http://localhost:8084/v3/api-docs |
+| sucursal-ms | http://localhost:8084/swagger-ui/index.html | http://localhost:8084/v3/api-docs |
 | reabastecimiento-ms | http://localhost:8085/doc/swagger-ui.html | http://localhost:8085/v3/api-docs |
 | factura-ms | http://localhost:8087/doc/swagger-ui.html | http://localhost:8087/v3/api-docs |
 | catalogo | http://localhost:8090/doc/swagger-ui.html | http://localhost:8090/v3/api-docs |
@@ -191,41 +191,7 @@ curl http://localhost:8200/api/v1/envios/1
 | bodega | http://localhost:9094/doc/swagger-ui.html | http://localhost:9094/v3/api-docs |
 | envio_service | http://localhost:9095/doc/swagger-ui.html | http://localhost:9095/v3/api-docs |
 
-> ⚠️ **`sucursal-ms` es la excepción**: tiene la dependencia en el `pom.xml` pero **no**
-> declara las propiedades `springdoc.*` en su `application.properties`, por lo que usa la
-> ruta **por defecto** (`/swagger-ui/index.html`) en vez de `/doc/swagger-ui.html`. Para
-> dejarlo igual que el resto, agregar a `sucursal-ms-master/src/main/resources/application.properties`:
->
-> ```properties
-> springdoc.api-docs.enabled=true
-> springdoc.swagger-ui.enabled=true
-> springdoc.swagger-ui.path=/doc/swagger-ui.html
-> ```
 
-### Configuración usada en los demás servicios
-
-`pom.xml`:
-
-```xml
-<dependency>
-    <groupId>org.springdoc</groupId>
-    <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-    <version>2.7.0</version>
-</dependency>
-```
-
-`src/main/resources/application.properties`:
-
-```properties
-springdoc.api-docs.enabled=true
-springdoc.swagger-ui.enabled=true
-springdoc.swagger-ui.path=/doc/swagger-ui.html
-```
-
-> **Compatibilidad:** la versión `2.7.0` de Springdoc está pensada para Spring Boot 3.x y
-> este proyecto usa Spring Boot 4.1.0. Si al levantar algún microservicio aparece un error
-> de arranque relacionado a Springdoc, o el Swagger UI no carga, hay que subir la
-> dependencia a una versión compatible con Spring Boot 4 o quitarla.
 
 ### Documentación remota
 
