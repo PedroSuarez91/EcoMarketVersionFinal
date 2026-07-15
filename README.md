@@ -172,14 +172,15 @@ curl http://localhost:8200/api/v1/envios/1
 ## 5. Documentación Swagger / OpenAPI
 
 **Los 14 microservicios** exponen documentación con **Springdoc OpenAPI**
-(`springdoc-openapi-starter-webmvc-ui` 2.7.0). El Gateway no expone Swagger.
+(`springdoc-openapi-starter-webmvc-ui` 2.7.0), todos bajo la misma ruta
+`/doc/swagger-ui.html`. El Gateway no expone Swagger.
 
 | Microservicio | Swagger UI | OpenAPI JSON |
 |---|---|---|
 | usuario-ms | http://localhost:8081/doc/swagger-ui.html | http://localhost:8081/v3/api-docs |
 | proveedor-ms | http://localhost:8082/doc/swagger-ui.html | http://localhost:8082/v3/api-docs |
 | carro-ms | http://localhost:8083/doc/swagger-ui.html | http://localhost:8083/v3/api-docs |
-| sucursal-ms | http://localhost:8084/swagger-ui/index.html | http://localhost:8084/v3/api-docs |
+| sucursal-ms | http://localhost:8084/doc/swagger-ui.html | http://localhost:8084/v3/api-docs |
 | reabastecimiento-ms | http://localhost:8085/doc/swagger-ui.html | http://localhost:8085/v3/api-docs |
 | factura-ms | http://localhost:8087/doc/swagger-ui.html | http://localhost:8087/v3/api-docs |
 | catalogo | http://localhost:8090/doc/swagger-ui.html | http://localhost:8090/v3/api-docs |
