@@ -2,7 +2,9 @@
 
 Proyecto académico — Duoc UC
 Repositorio: https://github.com/PedroSuarez91/EcoMarketVersionFinal
+
 Link Jira: https://duocuc-team-iou7altx.atlassian.net/jira/software/projects/HU/boards/4/backlog
+
 Link ejemplo swagger: http://localhost:8081/doc/swagger-ui/index.html
 
 ---
