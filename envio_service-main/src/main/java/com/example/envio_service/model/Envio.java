@@ -2,6 +2,7 @@ package com.example.envio_service.model;
 
 import java.time.LocalDate;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.EnumType;
@@ -24,6 +25,7 @@ import lombok.NoArgsConstructor;
 public class Envio {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long idEnvio;
 
     @NotNull(message = "El idPedido es obligatorio")

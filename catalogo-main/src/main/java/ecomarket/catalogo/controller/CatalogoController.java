@@ -66,4 +66,14 @@ public class CatalogoController {
         catalogoService.eliminarCatalogo(id);
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
+
+    @PutMapping("/{id}/productos/{idProducto}")
+    public ResponseEntity<Catalogo> putProductoExistenteEnCatalogo(@PathVariable Long id,
+                                                                   @PathVariable Long idProducto) {
+        Catalogo actualizado = catalogoService.agregarProductoExistente(id, idProducto);
+        if (actualizado == null) {
+            return new ResponseEntity<>(HttpStatus.NOT_FOUND);
+        }
+        return new ResponseEntity<>(actualizado, HttpStatus.OK);
+    }
 }

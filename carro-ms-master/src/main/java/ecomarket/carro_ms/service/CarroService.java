@@ -37,11 +37,16 @@ public class CarroService {
             String urlProducto = "http://localhost:8090/api/v1/productos/" + item.getIdProducto();
             ProductoDTO producto = restTemplate.getForObject(urlProducto, ProductoDTO.class);
 
+            if (producto == null || producto.getPrecioUnitario() == null) {
+                throw new RuntimeException("Producto no encontrado o sin precio: " + item.getIdProducto());
+            }
+
             item.setNombreProducto(producto.getNombre());
             double precioUnitario = Double.parseDouble(producto.getPrecioUnitario());
             item.setPrecioUnitario(precioUnitario);
 
-            double subtotalItem = precioUnitario * item.getCantidad().doubleValue();
+            int cantidad = item.getCantidad() == null ? 0 : item.getCantidad();
+            double subtotalItem = precioUnitario * cantidad;
             item.setSubtotal(subtotalItem);
 
             item.setCarro(carro);
@@ -50,9 +55,12 @@ public class CarroService {
 
         carro.setSubtotal(subtotalGeneral);
         if (carro.getCodigoCupon() != null && !carro.getCodigoCupon().isEmpty()) {
-            String urlCupon = "http://localhost:8091/api/v1/cupones/" + carro.getCodigoCupon();
+            String urlCupon = "http://localhost:8091/api/v1/cupones/codigo/" + carro.getCodigoCupon();
             CuponDescuentoDTO cupon = restTemplate.getForObject(urlCupon, CuponDescuentoDTO.class);
-            if (cupon != null && cupon.getActivo() && !cupon.getFechaExpiracion().isBefore(LocalDate.now())) {
+            if (cupon != null && Boolean.TRUE.equals(cupon.getActivo())
+                    && cupon.getPorcentajeDescuento() != null
+                    && cupon.getFechaExpiracion() != null
+                    && !cupon.getFechaExpiracion().isBefore(LocalDate.now())) {
                 Double descuento = subtotalGeneral * (cupon.getPorcentajeDescuento() / 100.0);
                 carro.setIdCupon(cupon.getIdCupon());
                 carro.setTotal(subtotalGeneral - descuento);

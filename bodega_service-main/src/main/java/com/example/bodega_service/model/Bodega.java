@@ -1,5 +1,6 @@
 package com.example.bodega_service.model;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -21,6 +22,7 @@ import lombok.NoArgsConstructor;
 public class Bodega {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long idBodega;
 
     @NotBlank(message = "El nombre de la bodega es obligatorio")

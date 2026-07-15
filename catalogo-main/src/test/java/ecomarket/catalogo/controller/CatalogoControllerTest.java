@@ -1,6 +1,7 @@
 package ecomarket.catalogo.controller;
 
 import ecomarket.catalogo.model.Catalogo;
+import ecomarket.catalogo.model.Producto;
 import ecomarket.catalogo.service.CatalogoService;
 import tools.jackson.databind.ObjectMapper;
 
@@ -47,6 +48,18 @@ public class CatalogoControllerTest {
         c.setNombreCatalogo(nombre);
         c.setFechaActualizacion(LocalDate.of(2026, 1, 1));
         return c;
+    }
+
+    private Producto producto(Long id, String nombre) {
+        Producto p = new Producto();
+        p.setIdProducto(id);
+        p.setNombre(nombre);
+        p.setMarca("EcoMarket");
+        p.setTipoProducto("Fruta");
+        p.setDescripcion("Producto de prueba");
+        p.setPrecioUnitario(1000);
+        p.setEstado(true);
+        return p;
     }
 
     @Test
@@ -131,5 +144,28 @@ public class CatalogoControllerTest {
         Mockito.doNothing().when(catalogoService).eliminarCatalogo(1L);
         mockMvc.perform(delete("/api/v1/catalogos/1"))
                 .andExpect(status().isNoContent());
+    }
+
+    // ---------- PUT /api/v1/catalogos/{id}/productos/{idProducto} ----------
+
+    @Test
+    void testPutProductoExistenteEnCatalogo200() throws Exception {
+        Catalogo conProducto = catalogo(1L, "Catalogo Verano");
+        conProducto.getProductos().add(producto(10L, "Manzana"));
+        Mockito.when(catalogoService.agregarProductoExistente(1L, 10L)).thenReturn(conProducto);
+
+        mockMvc.perform(put("/api/v1/catalogos/1/productos/10"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.idCatalogo").value(1L))
+                .andExpect(jsonPath("$.productos", hasSize(1)))
+                .andExpect(jsonPath("$.productos[0].idProducto").value(10L));
+    }
+
+    @Test
+    void testPutProductoExistenteNoEncontrado404() throws Exception {
+        Mockito.when(catalogoService.agregarProductoExistente(99L, 10L)).thenReturn(null);
+
+        mockMvc.perform(put("/api/v1/catalogos/99/productos/10"))
+                .andExpect(status().isNotFound());
     }
 }

@@ -118,7 +118,7 @@ public class PedidoService {
 
     private void descontarStock(Long idProducto, Integer cantidad) {
         try {
-            String url = inventarioUrl + "/api/v1/inventarios/descontar/" + idProducto + "/" + cantidad;
+            String url = inventarioUrl + "/api/v1/inventario/descontar/" + idProducto + "/" + cantidad;
             restTemplate.put(url, null);
         } catch (Exception e) {
             System.out.println("AVISO: no se pudo descontar stock del producto " + idProducto

@@ -139,35 +139,24 @@ curl http://localhost:8200/api/v1/envios/1
 
 ## 5. Documentación Swagger / OpenAPI
 
-Cada microservicio expone su documentación con **Springdoc OpenAPI**. Una vez levantado
-el servicio, la interfaz queda disponible en su propio puerto:
+La documentación con **Springdoc OpenAPI** está habilitada actualmente en los siguientes
+microservicios (son los únicos que declaran la dependencia en su `pom.xml`):
 
 | Microservicio | Swagger UI | OpenAPI JSON |
 |---|---|---|
-| usuario-ms | http://localhost:8081/doc/swagger-ui.html | http://localhost:8081/v3/api-docs |
-| proveedor-ms | http://localhost:8082/doc/swagger-ui.html | http://localhost:8082/v3/api-docs |
-| carro-ms | http://localhost:8083/doc/swagger-ui.html | http://localhost:8083/v3/api-docs |
-| sucursal-ms | http://localhost:8084/doc/swagger-ui.html | http://localhost:8084/v3/api-docs |
-| reabastecimiento-ms | http://localhost:8085/doc/swagger-ui.html | http://localhost:8085/v3/api-docs |
 | factura-ms | http://localhost:8087/doc/swagger-ui.html | http://localhost:8087/v3/api-docs |
 | catalogo | http://localhost:8090/doc/swagger-ui.html | http://localhost:8090/v3/api-docs |
 | cupon | http://localhost:8091/doc/swagger-ui.html | http://localhost:8091/v3/api-docs |
 | pedido-ms | http://localhost:8093/doc/swagger-ui.html | http://localhost:8093/v3/api-docs |
-| soporte | http://localhost:9091/doc/swagger-ui.html | http://localhost:9091/v3/api-docs |
-| autentificacion | http://localhost:9092/doc/swagger-ui.html | http://localhost:9092/v3/api-docs |
-| inventario | http://localhost:9093/doc/swagger-ui.html | http://localhost:9093/v3/api-docs |
-| bodega | http://localhost:9094/doc/swagger-ui.html | http://localhost:9094/v3/api-docs |
-| envio_service | http://localhost:9095/doc/swagger-ui.html | http://localhost:9095/v3/api-docs |
 
-**Configuración requerida en cada microservicio.** Los servicios `bodega` y
-`envio_service` ya traen las propiedades de Swagger en su `application.properties`.
-Para replicarlo en el resto, agregar en el `pom.xml`:
+Los demás microservicios **no exponen Swagger**. Para habilitarlo en cualquiera de ellos,
+agregar en el `pom.xml`:
 
 ```xml
 <dependency>
     <groupId>org.springdoc</groupId>
     <artifactId>springdoc-openapi-starter-webmvc-ui</artifactId>
-    <version>2.8.6</version>
+    <version>2.7.0</version>
 </dependency>
 ```
 
@@ -181,6 +170,11 @@ springdoc.swagger-ui.path=/doc/swagger-ui.html
 
 > **Nota:** si se omite la propiedad `springdoc.swagger-ui.path`, la ruta por defecto es
 > `http://localhost:{puerto}/swagger-ui/index.html`.
+
+> **Importante:** la versión `2.7.0` de Springdoc está pensada para Spring Boot 3.x y este
+> proyecto usa Spring Boot 4.1.0. Si al levantar `catalogo`, `cupon`, `factura` o `pedido`
+> aparece un error de arranque relacionado a Springdoc, o el Swagger UI no carga, hay que
+> subir la dependencia a una versión compatible con Spring Boot 4 o quitarla.
 
 ### Documentación remota
 

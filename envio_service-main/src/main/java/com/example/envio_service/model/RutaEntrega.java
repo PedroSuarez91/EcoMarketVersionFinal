@@ -2,6 +2,7 @@ package com.example.envio_service.model;
 
 import java.util.List;
 
+import io.swagger.v3.oas.annotations.media.Schema;
 import jakarta.persistence.CollectionTable;
 import jakarta.persistence.Column;
 import jakarta.persistence.ElementCollection;
@@ -25,6 +26,7 @@ import lombok.NoArgsConstructor;
 public class RutaEntrega {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Schema(accessMode = Schema.AccessMode.READ_ONLY)
     private Long idRuta;
 
     @NotBlank(message = "La comuna de destino es obligatoria")
